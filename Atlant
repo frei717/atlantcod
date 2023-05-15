@@ -1,0 +1,24 @@
+uniform sampler2D texture; // текстура, которую мы будем отображать
+uniform float time; // время для создания эффекта прокрутки
+
+varying vec2 v_texcoord; // координаты текстуры
+
+void main()
+{
+    vec2 scroll = vec2(0.0, time); // устанавливаем скорость прокрутки
+
+    // считываем цвет пикселя и его альфа-значение из текстуры
+    vec4 texel = texture2D(texture, v_texcoord);
+    float alpha = texel.a;
+
+    // смещаем координаты текстуры на значение скролла
+    vec2 offset = v_texcoord + scroll;
+
+    // считываем цвет и альфа-значение из текстуры, используя смещенные координаты
+    vec4 texel_offset = texture2D(texture, offset);
+    float alpha_offset = texel_offset.a;
+
+    // если альфа-значение пикселя смещенной текстуры равно нулю, то прозрачность равна нулю
+    if (alpha_offset == 0.0) {
+        discard;
+    }
