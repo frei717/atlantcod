@@ -1,24 +1,98 @@
-uniform sampler2D texture; // текстура, которую мы будем отображать
-uniform float time; // время для создания эффекта прокрутки
+import pygame
+import random
 
-varying vec2 v_texcoord; // координаты текстуры
+# Инициализация Pygame
+pygame.init()
 
-void main()
-{
-    vec2 scroll = vec2(0.0, time); // устанавливаем скорость прокрутки
+# Цвета
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+GRAY = (128, 128, 128)
 
-    // считываем цвет пикселя и его альфа-значение из текстуры
-    vec4 texel = texture2D(texture, v_texcoord);
-    float alpha = texel.a;
+# Размеры экрана
+SCREEN_WIDTH = 400
+SCREEN_HEIGHT = 600
 
-    // смещаем координаты текстуры на значение скролла
-    vec2 offset = v_texcoord + scroll;
+# Размеры блоков
+BLOCK_SIZE = 20
 
-    // считываем цвет и альфа-значение из текстуры, используя смещенные координаты
-    vec4 texel_offset = texture2D(texture, offset);
-    float alpha_offset = texel_offset.a;
+# Создание экрана
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Тетрис")
 
-    // если альфа-значение пикселя смещенной текстуры равно нулю, то прозрачность равна нулю
-    if (alpha_offset == 0.0) {
-        discard;
-    }
+# Создание фигур
+I_BLOCK = [['.','.','.','.'],
+           ['c','c','c','c'],
+           ['.','.','.','.'],
+           ['.','.','.','.']]
+
+J_BLOCK = [['.','c','.'],
+           ['.','c','.'],
+           ['c','c','.']]
+
+L_BLOCK = [['.','c','.'],
+           ['.','c','.'],
+           ['.','c','c']]
+
+O_BLOCK = [['c','c'],
+           ['c','c']]
+
+S_BLOCK = [['.','c','c'],
+           ['c','c','.'],
+           ['.','.','.']]
+
+T_BLOCK = [['.','c','.'],
+           ['c','c','c'],
+           ['.','.','.']]
+
+Z_BLOCK = [['c','c','.'],
+           ['.','c','c'],
+           ['.','.','.']]
+
+# Список фигур
+BLOCK_LIST = [I_BLOCK, J_BLOCK, L_BLOCK, O_BLOCK, S_BLOCK, T_BLOCK, Z_BLOCK]
+
+# Класс фигур
+class Block:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.color = random.choice([WHITE, GRAY])
+        self.shape = random.choice(BLOCK_LIST)
+
+    def rotate(self):
+        self.shape = [[self.shape[y][x] for y in range(len(self.shape))] for x in range(len(self.shape[0])-1,-1,-1)]
+
+    def draw(self):
+        for y, row in enumerate(self.shape):
+            for x, col in enumerate(row):
+                if col == 'c':
+                    pygame.draw.rect(screen, self.color, pygame.Rect((self.x + x) * BLOCK_SIZE, (self.y + y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE), 0)
+                    pygame.draw.rect(screen, BLACK, pygame.Rect((self.x + x) * BLOCK_SIZE, (self.y + y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE), 1)
+
+    def move_down(self):
+        self.y += 1
+
+    def move_left(self):
+        self.x -= 1
+
+    def move_right(self):
+        self.x += 1
+
+# Функция проверки столкновения фигуры с другими блоками
+def check_collision(block, other_blocks):
+    for other in other_blocks:
+        for y, row in enumerate(block.shape):
+            for x, col in enumerate(row):
+                if col == 'c':
+                    if block.y + y >= SCREEN_HEIGHT / BLOCK_SIZE:
+                        return True
+                    elif block.x + x < 0 or block.x + x >= SCREEN_WIDTH / BLOCK_SIZE:
+                        return True
+                    elif (block.x + x, block.y + y) == (other.x, other.y):
+                        return True
+    return False
+
+# Функция игры
+def game():
+    clock = pygame.time.Clock()
